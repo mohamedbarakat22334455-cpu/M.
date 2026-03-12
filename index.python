@@ -1,0 +1,47 @@
+import os
+import yt_dlp
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
+
+# --- الإعدادات الخاصة بك يا محمد ---
+API_TOKEN = '8533015825:AAGy7A-Abn3qqW8lwa7b93-Ii92wNTRP_cU'
+MY_WALLET = 'UQBS4-2MIVdF1jDxJK0YkDO5z8Y-5vHIk3gQwzZ7egE1PC_'
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    await message.reply("🏆 أهلاً بك في MB Gold Downloader\n\n"
+                       "ابعتلي أي رابط فيديو (تيك توك، إنستجرام، يوتيوب) وهجيبهولك فوراً بدون علامة مائية.\n\n"
+                       "✨ تطوير: محمد بركات")
+
+@dp.message_handler()
+async def download(message: types.Message):
+    if "http" in message.text:
+        status_msg = await message.answer("⏳ جاري التحميل... انتظر ثواني يا بطل")
+        try:
+            # إعدادات التحميل الذكي
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': 'video.mp4',
+                'quiet': True,
+                'no_warnings': True
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([message.text])
+            
+            # إرسال الفيديو للمستخدم
+            with open('video.mp4', 'rb') as video:
+                await bot.send_video(message.chat.id, video, caption="✅ تم التحميل بنجاح بواسطة MB Gold")
+            
+            # تنظيف السيرفر
+            os.remove('video.mp4')
+            await bot.delete_message(message.chat.id, status_msg.message_id)
+        except Exception as e:
+            await message.reply("❌ الرابط ده فيه مشكلة أو مش مدعوم حالياً.")
+            if os.path.exists("video.mp4"): os.remove("video.mp4")
+
+if __name__ == '__main__':
+    print("البوت بدأ العمل بنجاح.. جربه الآن في تليجرام!")
+    executor.start_polling(dp, skip_updates=True)
